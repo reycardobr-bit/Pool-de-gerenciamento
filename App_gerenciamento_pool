@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLP Manager: Gestão Ativa de Pool de Liquidez</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .input-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .input-group input, .input-group select {
+            border: 1px solid #d1d5db;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            margin-top: 0.25rem;
+            transition: all 0.2s;
+        }
+        .section-title {
+            padding-left: 0.75rem;
+            border-left: 4px solid #3b82f6;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <div class="max-w-4xl mx-auto bg-white shadow-2xl rounded-xl p-6 md:p-10 border border-blue-100">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-blue-700 mb-2">CLP Manager 🤖</h1>
+        <p class="text-gray-600 mb-8">Análise de Risco/Retorno e Gestão de Range para Pools de Liquidez Concentrada.</p>
+        
+        <form id="poolForm" class="space-y-8">
+            
+            <!-- SEÇÃO 1: Dados da Posição Atual -->
+            <div class="space-y-4 p-5 bg-blue-50 rounded-lg">
+                <h2 class="section-title text-xl font-bold text-blue-600">1. Sua Posição & Par</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="input-group">
+                        <label for="Preco_Atual">Preço Atual do Par (Token B / Token A)</label>
+                        <input type="number" id="Preco_Atual" value="2000" step="0.01" class="w-full">
+                    </div>
+                    <div class="input-group">
+                        <label for="Range_Inferior">Range Inferior (Sua Posição)</label>
+                        <input type="number" id="Range_Inferior" value="1950" step="0.01" class="w-full">
+                    </div>
+                    <div class="input-group">
+                        <label for="Range_Superior">Range Superior (Sua Posição)</label>
+                        <input type="number" id="Range_Superior" value="2050" step="0.01" class="w-full">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="input-group">
+                        <label for="APY_Atual">APY Atual (Ex: 0.18)</label>
+                        <input type="number" id="APY_Atual" value="0.18" step="0.01" class="w-full">
+                    </div>
+                    <div class="input-group">
+                        <label for="IL_Estimada">IL Estimada (Ex: 0.06)</label>
+                        <input type="number" id="IL_Estimada" value="0.06" step="0.01" class="w-full">
+                    </div>
+                    <div class="input-group">
+                        <label for="Vol_Change_7d_PAR">Vol. 7d Par (Ex: -0.15)</label>
+                        <input type="number" id="Vol_Change_7d_PAR" value="-0.15" step="0.01" class="w-full">
+                    </div>
+                    <div class="input-group">
+                        <label for="Fator_Macro_TVL_Geral">Fator Macro (Ex: 0.8)</label>
+                        <input type="number" id="Fator_Macro_TVL_Geral" value="0.8" step="0.01" class="w-full">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO 2: Indicadores Técnicos (Foco no Token Volátil 'A') -->
+            <div class="space-y-4 p-5 bg-yellow-50 rounded-lg">
+                <h2 class="section-title text-xl font-bold text-yellow-700">2. Indicadores do Token Volátil (A)</h2>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="input-group">
+                        <label for="RSI_A">RSI (0-100)</label>
+                        <input type="number" id="RSI_A" value="78" min="0" max="100" class="w-full">
+                    </div>
+                    <div class="input-group">
+                        <label for="StochRSI_A">StochRSI (0-100)</label>
+                        <input type="number" id="StochRSI_A" value="98" min="0" max="100" class="w-full">
+                    </div>
+                    <div class="input-group">
+                        <label for="BB_Largura_A">BB Largura (Ex: 0.16)</label>
+                        <input type="number" id="BB_Largura_A" value="0.16" step="0.001" class="w-full">
+                    </div>
+                    <div class="input-group">
+                        <label for="MACD_Sinal_A">MACD Crossover</label>
+                        <select id="MACD_Sinal_A" class="w-full">
+                            <option value="ALTA_FORTE" selected>ALTA_FORTE</option>
+                            <option value="ALTA_FRACA">ALTA_FRACA</option>
+                            <option value="BAIXA_FRACA">BAIXA_FRACA</option>
+                            <option value="BAIXA_FORTE">BAIXA_FORTE</option>
+                            <option value="LATERAL">LATERAL</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="BB_Largura_B">BB Largura Token B (Stable)</label>
+                        <input type="number" id="BB_Largura_B" value="0.001" step="0.001" class="w-full">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO 3: Capital e Custos -->
+            <div class="space-y-4 p-5 bg-green-50 rounded-lg">
+                <h2 class="section-title text-xl font-bold text-green-700">3. Capital & Custos</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="input-group">
+                        <label for="Liquidez_Total_USD">Liquidez Total Posta (USD)</label>
+                        <input type="number" id="Liquidez_Total_USD" value="50000" class="w-full">
+                    </div>
+                    <div class="input-group">
+                        <label for="Capital_Para_Gas_Mensal_USD">Capital para Gás Mensal (USD)</label>
+                        <input type="number" id="Capital_Para_Gas_Mensal_USD" value="50" class="w-full">
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" onclick="runAnalysis()" 
+                    class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-[1.01]">
+                EXECUTAR ANÁLISE E GESTÃO
+            </button>
+        </form>
+
+        <!-- Área de Resultados -->
+        <div class="mt-10 pt-5 border-t border-gray-200 space-y-4">
+            <h2 class="text-2xl font-bold text-gray-800">Resultado da Decisão</h2>
+            <div id="decisionOutput" class="p-4 rounded-lg text-lg font-bold text-center bg-gray-100 border-2 border-gray-300">
+                Aguardando execução...
+            </div>
+            
+            <h3 class="text-xl font-semibold text-gray-700 mt-6">Alertas e Pontuação:</h3>
+            <div id="alertOutput" class="space-y-2 text-sm">
+                <!-- Alertas serão injetados aqui -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PoolManager {
+            constructor(limite_score_minimo = 0.04, margem_rebalanceamento = 0.02, custo_medio_gas_rebalanceamento = 50) {
+                this.LIMITE_SCORE_MINIMO = limite_score_minimo;
+                this.MARGEM_REBALANCEAMENTO = margem_rebalanceamento;
+                this.CUSTO_MEDIO_GAS = custo_medio_gas_rebalanceamento; 
+                this.alertLog = document.getElementById('alertOutput');
+                this.alertLog.innerHTML = '';
+            }
+
+            enviarAlerta(mensagem, isCritical = false) {
+                const typeClass = isCritical ? 'bg-red-100 text-red-800 border-red-400' : 'bg-blue-100 text-blue-800 border-blue-400';
+                const logEntry = `<div class="p-3 rounded-md border ${typeClass}"><span class="font-semibold">${isCritical ? 'CRÍTICO: ' : 'ALERTA: '}</span>${mensagem}</div>`;
+                this.alertLog.innerHTML += logEntry;
+            }
+
+            ajustarLarguraRangePorCapital(rangeWidthPercentual, liquidezTotalUsd, capitalGasMensal) {
+                // Considera 4 rebalanceamentos por mês como ideal
+                const custoOtimizadoMensal = this.CUSTO_MEDIO_GAS * 4;
+                
+                if (capitalGasMensal < custoOtimizadoMensal) {
+                    const fatorNecessario = custoOtimizadoMensal / Math.max(capitalGasMensal, 1.0); 
+                    // Limita o alargamento máximo a 2x o sugerido (para não perder toda a eficiência)
+                    const fatorAjuste = Math.min(fatorNecessario, 2.0); 
+                    
+                    this.enviarAlerta(`Capital de gás limitado ($${capitalGasMensal.toFixed(2)} vs $${custoOtimizadoMensal.toFixed(2)} ideal). Alargando range em ${fatorAjuste.toFixed(2)}x o sugerido para reduzir rebalanceamentos.`, true);
+                    return fatorAjuste;
+                }
+                
+                return 1.0;
+            }
+
+            calcularNovoRange(precoAtual, larguraBbA, liquidezTotalUsd, capitalGasMensal) {
+                // 1. Largura Base (2x a volatilidade)
+                const rangeWidthPercentual = larguraBbA * 2.0; 
+
+                // 2. Ajuste por Capital
+                const fatorAjuste = this.ajustarLarguraRangePorCapital(rangeWidthPercentual, liquidezTotalUsd, capitalGasMensal);
+                
+                // Aplica o ajuste
+                const rangeWidthAjustado = rangeWidthPercentual * fatorAjuste;
+
+                // 3. Cálculo do Novo Range
+                const novoRangeInferior = precoAtual * (1 - (rangeWidthAjustado / 2.0));
+                const novoRangeSuperior = precoAtual * (1 + (rangeWidthAjustado / 2.0));
+                
+                return {
+                    inferior: novoRangeInferior.toFixed(4), 
+                    superior: novoRangeSuperior.toFixed(4)
+                };
+            }
+
+            analisarEGrenciarPool(dados) {
+                this.alertLog.innerHTML = ''; // Limpa logs anteriores
+
+                // Desempacotamento de dados
+                const {
+                    APY_Atual, IL_Estimada, Vol_Change_7d_PAR, Fator_Macro_TVL_Geral,
+                    Preco_Atual, Range_Inferior, Range_Superior,
+                    RSI_A, StochRSI_A, MACD_Sinal_A, BB_Largura_A, BB_Largura_B,
+                    Liquidez_Total_USD, Capital_Para_Gas_Mensal_USD
+                } = dados;
+
+                // 1. CHECAGEM DE REBALANCEAMENTO (PRIORIDADE MÁXIMA)
+                const foraDoRange = Preco_Atual < Range_Inferior || Preco_Atual > Range_Superior;
+                const proximoDoLimite = (Preco_Atual / Range_Inferior < (1 + this.MARGEM_REBALANCEAMENTO)) ||
+                                        (Range_Superior / Preco_Atual < (1 + this.MARGEM_REBALANCEAMENTO));
+                
+                if (foraDoRange || proximoDoLimite) {
+                    const novoRange = this.calcularNovoRange(Preco_Atual, BB_Largura_A, Liquidez_Total_USD, Capital_Para_Gas_Mensal_USD);
+                    const mensagem = `AÇÃO: REBALANCEAR. Posição Inativa/Próximo ao Limite. Novo Range Sugerido: $${novoRange.inferior} - $${novoRange.superior}.`;
+                    this.enviarAlerta(mensagem, true); // Alerta crítico para rebalanceamento
+                    return `REBALANCEAR: $${novoRange.inferior} - $${novoRange.superior}`;
+                }
+
+                // 2. CÁLCULO DO RISCO/RETORNO (Se a posição está ATIVA)
+                const netReturn = APY_Atual - IL_Estimada;
+                let riskFactorGraph = 1.0;
+                let riscoExtremo = false;
+
+                // CENÁRIO 1: RISCO EXTREMO (Punição 0.4)
+                if ((MACD_Sinal_A === "ALTA_FORTE" && RSI_A > 75) || BB_Largura_A > 0.15 || BB_Largura_B > 0.03) {
+                    riskFactorGraph = 0.4;
+                    riscoExtremo = true;
+                    this.enviarAlerta("RISCO CRÍTICO! Volatilidade/IL Altíssima ou Paridade (Token B) em Risco.", true);
+                
+                // CENÁRIO 2: RISCO MODERADO (Punição 0.7)
+                } else if (Vol_Change_7d_PAR < -0.10 || RSI_A > 70 || StochRSI_A > 85) {
+                    riskFactorGraph = 0.7;
+                    this.enviarAlerta("RISCO MODERADO. Volume em queda ou Alerta de Reversão de preço (IL iminente).");
+                
+                // CENÁRIO 3: FAVORÁVEL (Bônus 1.4)
+                } else if (Vol_Change_7d_PAR > 0.10 && BB_Largura_A < 0.05 && RSI_A >= 40 && RSI_A <= 60) {
+                    riskFactorGraph = 1.4;
+                    this.enviarAlerta("FAVORÁVEL. Volume alto e preço estável (BB e RSI neutros).");
+                }
+                
+                const finalScore = netReturn * riskFactorGraph * Fator_Macro_TVL_Geral;
+
+                // 3. DECISÃO FINAL
+                this.enviarAlerta(`Pontuação Ajustada (Score Final): ${finalScore.toFixed(4)}`, false);
+
+                if (finalScore > this.LIMITE_SCORE_MINIMO) {
+                    this.enviarAlerta("DECISÃO: MANTER POSIÇÃO. O lucro ajustado compensa o risco.", false);
+                    return "MANTER POSIÇÃO";
+                } else {
+                    this.enviarAlerta("DECISÃO: DESMONTAR POSIÇÃO. Risco/IL supera lucro ajustado.", true);
+                    return "DESMONTAR POSIÇÃO";
+                }
+            }
+        }
+
+        function getFormData() {
+            const form = document.getElementById('poolForm');
+            const data = {};
+            // Função auxiliar para garantir que números sejam floats e não strings vazias
+            const getValue = (id) => {
+                const element = form.elements[id];
+                if (!element) return null;
+
+                if (element.type === 'number') {
+                    return parseFloat(element.value) || 0;
+                }
+                return element.value;
+            };
+
+            // Mapeamento dos inputs para o objeto de dados
+            const fields = [
+                'APY_Atual', 'IL_Estimada', 'Vol_Change_7d_PAR', 'Fator_Macro_TVL_Geral',
+                'Preco_Atual', 'Range_Inferior', 'Range_Superior',
+                'RSI_A', 'StochRSI_A', 'MACD_Sinal_A', 'BB_Largura_A', 'BB_Largura_B',
+                'Liquidez_Total_USD', 'Capital_Para_Gas_Mensal_USD'
+            ];
+
+            fields.forEach(field => {
+                data[field] = getValue(field);
+            });
+            return data;
+        }
+
+        function runAnalysis() {
+            const dados = getFormData();
+            // Cria uma nova instância para limpar os logs
+            const manager = new PoolManager(); 
+            const decisionOutput = document.getElementById('decisionOutput');
+            let result = '';
+
+            try {
+                result = manager.analisarEGrenciarPool(dados);
+            } catch (error) {
+                console.error("Erro na análise:", error);
+                decisionOutput.className = 'p-4 rounded-lg text-lg font-bold text-center bg-red-600 text-white';
+                decisionOutput.textContent = 'ERRO: Verifique os valores de entrada.';
+                return;
+            }
+
+            // Estiliza o output com base na decisão
+            let decisionClass = 'p-4 rounded-lg text-lg font-bold text-center ';
+            if (result.startsWith('REBALANCEAR')) {
+                decisionClass += 'bg-yellow-500 text-white border-yellow-700';
+            } else if (result === 'MANTER POSIÇÃO') {
+                decisionClass += 'bg-green-500 text-white border-green-700';
+            } else {
+                decisionClass += 'bg-red-500 text-white border-red-700';
+            }
+
+            decisionOutput.className = decisionClass;
+            decisionOutput.textContent = result;
+        }
+
+        // Executar uma análise inicial ao carregar
+        document.addEventListener('DOMContentLoaded', () => {
+             // Simula um clique no botão para mostrar o resultado inicial
+             runAnalysis();
+        });
+    </script>
+</body>
+</html>
+
